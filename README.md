@@ -20,8 +20,6 @@ This project visualizes key healthcare data to provide meaningful insights for b
 
 - HTML5
 - CSS3
-- JavaScript (Vanilla JS)
-- Chart.js
 
 ---
 
