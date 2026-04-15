@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hospital Analytics Dashboard | City General Hospital</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: rgba(0,0,0,0.08);
+    --text: #0f1923;
+    --muted: #6b7585;
+    --accent: #1a56db;
+    --accent2: #0e9f6e;
+    --accent3: #e3a008;
+    --accent4: #e02424;
+    --accent5: #7e3af2;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* TOP NAV */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .period-badge {
+    background: #eff6ff; color: var(--accent);
+    border: 1px solid #bfdbfe;
+    border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 500;
+  }
+  .analyst-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border-radius: 20px; padding: 5px 14px 5px 5px;
+  }
+  .analyst-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .analyst-name { font-size: 12px; font-weight: 500; color: var(--text); }
+
+  /* LAYOUT */
+  .main { padding: 1.75rem 2rem; max-width: 1300px; margin: 0 auto; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* FILTER ROW */
+  .filter-row {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .filter-btn {
+    padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--muted);
+    transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* KPI GRID */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 14px;
+    margin-bottom: 1.75rem;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 1.25rem 1.4rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-accent-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .kpi-icon-wrap {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 14px;
+  }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 8px; }
+  .kpi-change { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+  .up { color: var(--accent2); }
+  .down { color: var(--accent4); }
+  .kpi-sparkline { margin-top: 10px; opacity: 0.7; }
+
+  /* CHARTS */
+  .charts-row {
+    display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr);
+    gap: 14px; margin-bottom: 1.75rem;
+  }
+  .chart-card {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .chart-card-title {
+    font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+  }
+  .chart-card-sub { font-size: 12px; color: var(--muted); margin-bottom: 1rem; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* BOTTOM ROW */
+  .bottom-row {
+    display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.2fr);
+    gap: 14px; margin-bottom: 1.75rem;
+  }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1.5px solid var(--border);
+  }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 11px 10px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); }
+  .badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    display: inline-block;
+  }
+  .badge-green { background: #def7ec; color: #057a55; }
+  .badge-amber { background: #fdf3c0; color: #8f6000; }
+  .badge-red   { background: #fde8e8; color: #c81e1e; }
+
+  /* INSIGHT CARDS */
+  .insight-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-bottom: 1.75rem; }
+  .insight-card {
+    background: var(--surface); border-radius: 14px;
+    padding: 1.1rem 1.3rem; border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    border-left: 3px solid var(--accent);
+  }
+  .insight-card.warn { border-left-color: var(--accent3); }
+  .insight-card.danger { border-left-color: var(--accent4); }
+  .insight-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .insight-card.warn .insight-tag { color: var(--accent3); }
+  .insight-card.danger .insight-tag { color: var(--accent4); }
+  .insight-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center; padding: 1.5rem 0;
+    font-size: 11px; color: var(--muted);
+    border-top: 1px solid var(--border); margin-top: 0.5rem;
+  }
+  .footer strong { color: var(--text); }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .charts-row, .bottom-row, .insight-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .main { padding: 1rem; }
+    .topbar { padding: 0 1rem; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topbar">
+  <div class="topbar-left">
+    <div class="logo-icon">🏥</div>
+    <div>
+      <div class="logo-text">City General Hospital</div>
+      <div class="logo-sub">Healthcare Analytics Dashboard</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="period-badge">2026 &nbsp;|&nbsp; Jan – April</span>
+    <div class="analyst-chip">
+      <div class="analyst-avatar">AM</div>
+      <div class="analyst-name">Anam Maria</div>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- FILTER -->
+  <div class="filter-row">
+    <span class="filter-label">Filter by Department:</span>
+    <button class="filter-btn active" onclick="setDept('all',this)">All Departments</button>
+    <button class="filter-btn" onclick="setDept('cardiology',this)">Cardiology</button>
+    <button class="filter-btn" onclick="setDept('orthopedics',this)">Orthopedics</button>
+    <button class="filter-btn" onclick="setDept('neurology',this)">Neurology</button>
+    <button class="filter-btn" onclick="setDept('pediatrics',this)">Pediatrics</button>
+    <button class="filter-btn" onclick="setDept('oncology',this)">Oncology</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="section-header"><span class="section-title">Key Performance Indicators</span></div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-accent-bar" style="background:var(--accent)"></div>
+      <div class="kpi-icon-wrap" style="background:#eff6ff;">🛏️</div>
+      <div class="kpi-label">Total Admissions</div>
+      <div class="kpi-value" id="k-adm">4,820</div>
+      <div class="kpi-change up" id="k-adm-ch">▲ 12.3% vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent-bar" style="background:var(--accent2)"></div>
+      <div class="kpi-icon-wrap" style="background:#f3faf7;">📊</div>
+      <div class="kpi-label">Avg Bed Occupancy</div>
+      <div class="kpi-value" id="k-occ">78%</div>
+      <div class="kpi-change up" id="k-occ-ch">▲ +4% vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent-bar" style="background:var(--accent3)"></div>
+      <div class="kpi-icon-wrap" style="background:#fffbeb;">⏱️</div>
+      <div class="kpi-label">Avg Length of Stay</div>
+      <div class="kpi-value" id="k-los">4.2 days</div>
+      <div class="kpi-change down" id="k-los-ch">▼ -0.3 days vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-accent-bar" style="background:var(--accent5)"></div>
+      <div class="kpi-icon-wrap" style="background:#f5f3ff;">💰</div>
+      <div class="kpi-label">Revenue (INR Cr)</div>
+      <div class="kpi-value" id="k-rev">₹24.6 Cr</div>
+      <div class="kpi-change up" id="k-rev-ch">▲ +8.7% vs last quarter</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Monthly Patient Admissions</div>
+      <div class="chart-card-sub">January – March 2024</div>
+      <div style="position:relative;height:230px;">
+        <canvas id="admChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Admissions by Department</div>
+      <div class="chart-card-sub">Share of total Q1 2024</div>
+      <div class="legend" id="deptLegend">
+        <div class="legend-item"><span class="legend-dot" style="background:#1a56db"></span>Cardiology 28%</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#0e9f6e"></span>Orthopedics 22%</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#e3a008"></span>Neurology 18%</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#e02424"></span>Pediatrics 20%</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#7e3af2"></span>Oncology 12%</div>
+      </div>
+      <div style="position:relative;height:200px;">
+        <canvas id="deptChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="bottom-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Bed Occupancy Rate (%)</div>
+      <div class="chart-card-sub">Monthly trend — target: 80%</div>
+      <div style="position:relative;height:200px;">
+        <canvas id="bedChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Department Performance Overview</div>
+      <div class="chart-card-sub">Q1 2024 summary by department</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Admissions</th>
+            <th>Avg LOS</th>
+            <th>Revenue</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="deptTable">
+          <tr><td>Cardiology</td><td>1,350</td><td>5.1d</td><td>₹7.2 Cr</td><td><span class="badge badge-green">On Track</span></td></tr>
+          <tr><td>Orthopedics</td><td>1,060</td><td>3.8d</td><td>₹5.8 Cr</td><td><span class="badge badge-green">On Track</span></td></tr>
+          <tr><td>Neurology</td><td>868</td><td>5.6d</td><td>₹4.9 Cr</td><td><span class="badge badge-amber">Review</span></td></tr>
+          <tr><td>Pediatrics</td><td>964</td><td>2.9d</td><td>₹3.9 Cr</td><td><span class="badge badge-green">On Track</span></td></tr>
+          <tr><td>Oncology</td><td>578</td><td>6.2d</td><td>₹2.8 Cr</td><td><span class="badge badge-red">Critical</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REVENUE BAR CHART -->
+  <div class="chart-card" style="margin-bottom:1.75rem;">
+    <div class="chart-card-title">Revenue by Department (INR Crore)</div>
+    <div class="chart-card-sub">Q1 2024 comparative breakdown</div>
+    <div style="position:relative;height:200px;">
+      <canvas id="revChart"></canvas>
+    </div>
+  </div>
+
+  <!-- KEY INSIGHTS -->
+  <div class="section-header" style="margin-bottom:1rem;"><span class="section-title">Key Insights & Recommendations</span></div>
+  <div class="insight-row">
+    <div class="insight-card">
+      <div class="insight-tag">✅ Positive</div>
+      <div class="insight-text">Cardiology and Pediatrics are performing above target with optimal bed utilization and low Length of Stay, contributing ₹11.1 Cr combined revenue.</div>
+    </div>
+    <div class="insight-card warn">
+      <div class="insight-tag">⚠️ Monitor</div>
+      <div class="insight-text">Neurology's average LOS of 5.6 days is 33% above hospital average. Reviewing discharge protocols could free up 40+ bed-days per month.</div>
+    </div>
+    <div class="insight-card danger">
+      <div class="insight-tag">🔴 Action Required</div>
+      <div class="insight-text">Oncology bed occupancy at 88% exceeds safe threshold. With only 578 admissions and ₹2.8 Cr revenue, resource allocation needs immediate review.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Data Analytics Project &nbsp;|&nbsp; <strong>City General Hospital—2026</strong> &nbsp;|&nbsp; Designed & Analyzed by <strong>Anam Maria</strong> &nbsp;|&nbsp; Tools: Excel, Power BI, Data Visualization
+  </div>
+</div>
+
+<script>
+const data = {
+  all:         { adm:'4,820', occ:'78%', los:'4.2 days', rev:'₹24.6 Cr', admArr:[1480,1640,1700], occArr:[72,78,84] },
+  cardiology:  { adm:'1,350', occ:'82%', los:'5.1 days', rev:'₹7.2 Cr',  admArr:[410,460,480],   occArr:[75,82,88] },
+  orthopedics: { adm:'1,060', occ:'74%', los:'3.8 days', rev:'₹5.8 Cr',  admArr:[320,360,380],   occArr:[68,74,79] },
+  neurology:   { adm:'868',   occ:'76%', los:'5.6 days', rev:'₹4.9 Cr',  admArr:[270,290,308],   occArr:[70,75,80] },
+  pediatrics:  { adm:'964',   occ:'71%', los:'2.9 days', rev:'₹3.9 Cr',  admArr:[300,320,344],   occArr:[62,70,80] },
+  oncology:    { adm:'578',   occ:'88%', los:'6.2 days', rev:'₹2.8 Cr',  admArr:[180,190,208],   occArr:[82,87,91] }
+};
+
+function setDept(key, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = data[key];
+  document.getElementById('k-adm').textContent = d.adm;
+  document.getElementById('k-occ').textContent = d.occ;
+  document.getElementById('k-los').textContent = d.los;
+  document.getElementById('k-rev').textContent = d.rev;
+  admChart.data.datasets[0].data = d.admArr;
+  admChart.update();
+  bedChart.data.datasets[0].data = d.occArr;
+  bedChart.update();
+}
+
+const admChart = new Chart(document.getElementById('admChart'), {
+  type: 'bar',
+  data: {
+    labels: ['January', 'February', 'March'],
+    datasets: [{
+      label: 'Patient Admissions',
+      data: [1480, 1640, 1700],
+      backgroundColor: ['#93c5fd','#3b82f6','#1d4ed8'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11, family: 'DM Sans' } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11, family: 'DM Sans' } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('deptChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Cardiology','Orthopedics','Neurology','Pediatrics','Oncology'],
+    datasets: [{
+      data: [1350,1060,868,964,578],
+      backgroundColor: ['#1a56db','#0e9f6e','#e3a008','#e02424','#7e3af2'],
+      borderWidth: 2, borderColor: '#ffffff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    cutout: '60%'
+  }
+});
+
+const bedChart = new Chart(document.getElementById('bedChart'), {
+  type: 'line',
+  data: {
+    labels: ['January', 'February', 'March'],
+    datasets: [
+      {
+        label: 'Occupancy %',
+        data: [72, 78, 84],
+        borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.1)',
+        tension: 0.4, fill: true, pointRadius: 6, pointBackgroundColor: '#1a56db'
+      },
+      {
+        label: 'Target (80%)',
+        data: [80, 80, 80],
+        borderColor: '#e3a008', borderDash: [6,4],
+        tension: 0, fill: false, pointRadius: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 55, max: 100, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, callback: v => v + '%' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('revChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Cardiology','Orthopedics','Neurology','Pediatrics','Oncology'],
+    datasets: [{
+      label: 'Revenue (Cr)',
+      data: [7.2, 5.8, 4.9, 3.9, 2.8],
+      backgroundColor: ['#1a56db','#0e9f6e','#e3a008','#e02424','#7e3af2'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, callback: v => '₹' + v + ' Cr' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
