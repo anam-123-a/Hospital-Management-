@@ -40,11 +40,6 @@ This project visualizes key healthcare data to provide meaningful insights for b
 2. Open `index.html` in your browser
 3. Explore the dashboard 🎉
 
----
-
-## 📸 Screenshot
-
-(Add your project screenshot here)
 
 ---
 
